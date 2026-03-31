@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiewit Heat Index Tool</title>
+  <link rel="preconnect" href="https://api.weather.gov">
+  <link rel="stylesheet" href="styles-kiewit.css">
+</head>
+<body>
+  <div class="site-frame">
+    <header class="topbar">
+      <div class="topbar-mark" aria-hidden="true"></div>
+      <div class="topbar-copy">
+        <p class="topbar-kicker">Kiewit Operations</p>
+        <p class="topbar-title">Heat Safety Program</p>
+      </div>
+    </header>
+
+    <div class="page-shell">
+      <header class="hero panel">
+        <div class="hero-copy-block">
+          <p class="eyebrow">Environmental Readiness</p>
+          <h1>Heat Index and Safety Plan</h1>
+          <p class="hero-copy">
+            Monitor site conditions, evaluate forecasted heat exposure, and review required field controls.
+          </p>
+        </div>
+        <aside class="hero-aside" aria-label="Program summary">
+          <p class="hero-aside-label">Operational Summary</p>
+          <p class="hero-aside-copy">
+            Typed location lookup, National Weather Service hourly forecast data, and OSHA heat-risk
+            bands presented in a business-first dashboard.
+          </p>
+          <a href="https://www.osha.gov/heat/heat-app" target="_blank" rel="noreferrer">View OSHA Heat Safety Tool</a>
+        </aside>
+      </header>
+
+      <main class="app-grid">
+        <section class="lookup-launcher panel">
+          <div class="lookup-launcher-copy">
+            <div>
+              <p class="eyebrow">Location</p>
+              <h2>Lookup Conditions</h2>
+            </div>
+            <p id="lookupMessage">Type a city and state, ZIP code, or street address to load conditions.</p>
+          </div>
+          <div class="lookup-launcher-actions">
+            <button id="openLookupModalButton" type="button" class="primary-button">Lookup Conditions</button>
+            <button id="refreshButton" class="secondary-button" type="button">Refresh</button>
+          </div>
+        </section>
+
+        <section class="panel dashboard-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Heat Dashboard</p>
+              <h2 id="welcomeTitle">Enter a location to start monitoring</h2>
+            </div>
+            <span class="status-pill">Internal Use</span>
+          </div>
+
+          <div class="controls-grid">
+            <label id="forecastDayField">
+              <span>Forecast Day</span>
+              <select id="forecastDaySelect">
+                <option value="today" selected>Today</option>
+                <option value="tomorrow">Tomorrow</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Policy Profile</span>
+              <select id="policySelect">
+                <option value="sop052">Southwest District</option>
+                <option value="taxiway">Taxiway U</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Workload</span>
+              <select id="workloadSelect">
+                <option value="light">Light Work</option>
+                <option value="moderate" selected>Normal Work</option>
+                <option value="heavy">Heavy Work</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Sun Exposure</span>
+              <select id="sunSelect">
+                <option value="shade" selected>Mostly Shade</option>
+                <option value="sun">Direct Sun</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="status-banner" id="statusBanner">
+            Type a city and state, ZIP code, or street address to load heat conditions.
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric-card">
+              <p class="metric-label">Temperature</p>
+              <p class="metric-value" id="temperatureValue">--</p>
+            </article>
+            <article class="metric-card">
+              <p class="metric-label">Humidity</p>
+              <p class="metric-value" id="humidityValue">--</p>
+            </article>
+            <article class="metric-card metric-card-focus">
+              <p class="metric-label">Heat Index</p>
+              <p class="metric-value" id="heatIndexValue">--</p>
+            </article>
+            <article class="metric-card">
+              <p class="metric-label">Risk Level</p>
+              <p class="metric-value" id="riskLevelValue">--</p>
+            </article>
+          </div>
+
+          <div class="meta-grid">
+            <article class="meta-card">
+              <h3>Location/Current Time</h3>
+              <p id="locationValue">Not loaded</p>
+              <p id="currentTimeValue" class="meta-secondary">--</p>
+            </article>
+            <article class="meta-card">
+              <h3>Updated</h3>
+              <p id="updatedValue">--</p>
+            </article>
+            <article class="meta-card">
+              <h3>Risk Level Effective Time</h3>
+              <p id="sourceValue">--</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel timeline-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Forecast</p>
+              <h2>Hour-By-Hour Policy Output</h2>
+            </div>
+          </div>
+
+          <div class="timeline-toolbar" aria-label="Forecast hour navigation">
+            <button id="timelinePrevButton" class="secondary-button timeline-nav-button" type="button">Earlier</button>
+            <div class="timeline-position">
+              <p class="timeline-position-label">Forecast Hour</p>
+              <p id="timelinePositionValue" class="timeline-position-value">--</p>
+              <p id="timelineCountValue" class="timeline-count">--</p>
+            </div>
+            <button id="timelineNextButton" class="secondary-button timeline-nav-button" type="button">Later</button>
+          </div>
+
+          <label class="timeline-slider-wrap" for="timelineSlider">
+            <span class="timeline-slider-label">Slide to a forecast hour</span>
+            <input id="timelineSlider" class="timeline-slider" type="range" min="0" max="0" step="1" value="0">
+            <div id="timelineSliderMarkers" class="timeline-slider-markers" aria-hidden="true"></div>
+            <div id="timelineSliderLabels" class="timeline-slider-labels" aria-hidden="true"></div>
+            <span id="timelineSliderHint" class="timeline-slider-hint">Forecast timeline unavailable</span>
+          </label>
+
+          <div id="timelineContent" class="timeline-content">
+            <p class="empty-state">Enter a location to see when policy rules change hour by hour.</p>
+          </div>
+        </section>
+
+        <section class="panel emergency-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Response</p>
+              <h2>Symptoms and First Actions</h2>
+            </div>
+          </div>
+
+          <div class="symptom-grid" id="symptomGrid"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="lookupModal" class="modal-shell hidden" role="dialog" aria-modal="true" aria-labelledby="lookupModalTitle">
+    <div id="lookupModalBackdrop" class="modal-backdrop"></div>
+    <section class="modal-card">
+      <div class="panel-head modal-head">
+        <div>
+          <p class="eyebrow">Location</p>
+          <h2 id="lookupModalTitle">Lookup Conditions</h2>
+        </div>
+        <button id="closeLookupModalButton" type="button" class="secondary-button modal-close-button" aria-label="Close location lookup">Close</button>
+      </div>
+
+      <form id="locationForm" class="stack-form">
+        <label>
+          <span>Location</span>
+          <input id="locationInput" name="location" type="text" placeholder="Enter zip code, city and state, or street address" required>
+        </label>
+
+        <button id="lookupButton" type="submit" class="primary-button">Check Heat Conditions</button>
+      </form>
+
+      <div class="modal-help">
+        <span class="status-pill">No Login Required</span>
+      </div>
+    </section>
+  </div>
+
+  <template id="symptomTemplate">
+    <article class="symptom-card">
+      <h3></h3>
+      <p class="symptom-signs"></p>
+      <p class="symptom-actions"></p>
+    </article>
+  </template>
+
+  <template id="timelineTemplate">
+    <article class="timeline-card">
+      <div class="timeline-top">
+        <div>
+          <h3 class="timeline-time"></h3>
+          <p class="timeline-forecast"></p>
+        </div>
+        <span class="timeline-badge"></span>
+      </div>
+      <div class="timeline-metrics"></div>
+      <ul class="timeline-actions"></ul>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
