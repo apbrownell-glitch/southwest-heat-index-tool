@@ -475,6 +475,7 @@ function renderHourlyTimeline(payload) {
   const forecastDay = forecastDaySelect.value;
   const policy = policySelect.value;
   const directSun = sunSelect.value === "sun";
+  const workload = "moderate";
   const periods = getSelectedForecastPeriods(payload.hourlyPeriods, forecastDay);
 
   if (!periods.length) {
