@@ -140,7 +140,6 @@ const statusBanner = document.getElementById("statusBanner");
 const forecastDayField = document.getElementById("forecastDayField");
 const forecastDaySelect = document.getElementById("forecastDaySelect");
 const policySelect = document.getElementById("policySelect");
-const workloadSelect = document.getElementById("workloadSelect");
 const sunSelect = document.getElementById("sunSelect");
 const temperatureValue = document.getElementById("temperatureValue");
 const humidityValue = document.getElementById("humidityValue");
@@ -181,7 +180,6 @@ lookupModalBackdrop.addEventListener("click", closeLookupModal);
 refreshButton.addEventListener("click", handleRefresh);
 forecastDaySelect.addEventListener("change", handlePreferenceChange);
 policySelect.addEventListener("change", handlePreferenceChange);
-workloadSelect.addEventListener("change", handlePreferenceChange);
 sunSelect.addEventListener("change", handlePreferenceChange);
 timelinePrevButton.addEventListener("click", () => stepTimeline(-1));
 timelineNextButton.addEventListener("click", () => stepTimeline(1));
@@ -205,8 +203,7 @@ function restorePreferences() {
   locationInput.value = preferences.locationQuery ?? "";
   forecastDaySelect.value = preferences.forecastDay ?? "today";
   policySelect.value = preferences.policy ?? "sop052";
-  workloadSelect.value = preferences.workload ?? "moderate";
-  sunSelect.value = preferences.sun ?? "shade";
+  sunSelect.value = preferences.sun ?? "sun";
 }
 
 function handlePreferenceChange() {
@@ -214,7 +211,7 @@ function handlePreferenceChange() {
     locationQuery: locationInput.value.trim(),
     forecastDay: forecastDaySelect.value,
     policy: policySelect.value,
-    workload: workloadSelect.value,
+    workload: "moderate",
     sun: sunSelect.value,
   });
 
@@ -256,7 +253,7 @@ async function lookupWeather(query) {
       locationQuery: query,
       forecastDay: forecastDaySelect.value,
       policy: policySelect.value,
-      workload: workloadSelect.value,
+      workload: "moderate",
       sun: sunSelect.value,
     });
 
@@ -478,7 +475,6 @@ function renderHourlyTimeline(payload) {
   const forecastDay = forecastDaySelect.value;
   const policy = policySelect.value;
   const directSun = sunSelect.value === "sun";
-  const workload = workloadSelect.value;
   const periods = getSelectedForecastPeriods(payload.hourlyPeriods, forecastDay);
 
   if (!periods.length) {
@@ -757,7 +753,7 @@ function updateForecastDayAvailability(periods) {
       locationQuery: locationInput.value.trim(),
       forecastDay: "today",
       policy: policySelect.value,
-      workload: workloadSelect.value,
+      workload: "moderate",
       sun: sunSelect.value,
     });
   }
