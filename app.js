@@ -161,6 +161,7 @@ const timelineCountValue = document.getElementById("timelineCountValue");
 const timelineTemplate = document.getElementById("timelineTemplate");
 const symptomTemplate = document.getElementById("symptomTemplate");
 const symptomGrid = document.getElementById("symptomGrid");
+const ZIP_CODE_PATTERN = /^\d{5}(?:-\d{4})?$/;
 
 let lastWeatherPayload = null;
 let lastResolvedQuery = "";
@@ -206,12 +207,16 @@ function restorePreferences() {
   sunSelect.value = preferences.sun ?? "sun";
 }
 
+function getWorkloadValue() {
+  return "moderate";
+}
+
 function handlePreferenceChange() {
   savePreferences({
     locationQuery: locationInput.value.trim(),
     forecastDay: forecastDaySelect.value,
     policy: policySelect.value,
-    workload: "moderate",
+    workload: getWorkloadValue(),
     sun: sunSelect.value,
   });
 
@@ -225,7 +230,7 @@ async function handleLocationSubmit(event) {
   const query = locationInput.value.trim();
   if (!query) {
     statusBanner.className = "status-banner risk-high";
-    statusBanner.textContent = "Enter a city and state, ZIP code, or street address to look up conditions.";
+    statusBanner.textContent = "Enter a ZIP code to look up conditions.";
     return;
   }
 
@@ -253,7 +258,7 @@ async function lookupWeather(query) {
       locationQuery: query,
       forecastDay: forecastDaySelect.value,
       policy: policySelect.value,
-      workload: "moderate",
+      workload: getWorkloadValue(),
       sun: sunSelect.value,
     });
 
@@ -297,9 +302,9 @@ function handleGlobalKeydown(event) {
 
 function renderIdleState() {
   welcomeTitle.textContent = "Enter a location to start monitoring";
-  lookupMessage.textContent = "Type a city and state, ZIP code, or street address to load conditions.";
+  lookupMessage.textContent = "Enter a ZIP code to load conditions.";
   statusBanner.className = "status-banner";
-  statusBanner.textContent = "Type a city and state, ZIP code, or street address to load heat conditions.";
+  statusBanner.textContent = "Enter a ZIP code to load heat conditions.";
   forecastDayField.classList.remove("hidden");
   timelineEntries = [];
   activeTimelineIndex = 0;
@@ -329,6 +334,10 @@ function setLoadingState(message) {
 }
 
 async function geocodeLocation(query) {
+  if (ZIP_CODE_PATTERN.test(query)) {
+    return geocodeZipCode(query);
+  }
+
   const encodedQuery = encodeURIComponent(query);
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodedQuery}&count=5&language=en&format=json&countryCode=US`;
   const response = await fetch(url);
@@ -342,13 +351,35 @@ async function geocodeLocation(query) {
   const match = results.find((entry) => entry.country_code === "US") ?? results[0];
 
   if (!match) {
-    throw new Error("No matching location was found. Try a fuller city/state or ZIP entry.");
+    throw new Error("No matching location was found. Try a valid ZIP code.");
   }
 
   return {
     label: buildResolvedLabel(match),
     latitude: match.latitude,
     longitude: match.longitude,
+  };
+}
+
+async function geocodeZipCode(zipCode) {
+  const normalizedZipCode = zipCode.slice(0, 5);
+  const response = await fetch(`https://api.zippopotam.us/us/${normalizedZipCode}`);
+
+  if (!response.ok) {
+    throw new Error("No matching ZIP code was found. Check the ZIP code and try again.");
+  }
+
+  const data = await response.json();
+  const place = data.places?.[0];
+
+  if (!place) {
+    throw new Error("No matching ZIP code was found. Check the ZIP code and try again.");
+  }
+
+  return {
+    label: `${place["place name"]}, ${place["state abbreviation"]} ${normalizedZipCode}`,
+    latitude: Number.parseFloat(place.latitude),
+    longitude: Number.parseFloat(place.longitude),
   };
 }
 
@@ -475,7 +506,7 @@ function renderHourlyTimeline(payload) {
   const forecastDay = forecastDaySelect.value;
   const policy = policySelect.value;
   const directSun = sunSelect.value === "sun";
-  const workload = "moderate";
+  const workload = getWorkloadValue();
   const periods = getSelectedForecastPeriods(payload.hourlyPeriods, forecastDay);
 
   if (!periods.length) {
@@ -754,7 +785,7 @@ function updateForecastDayAvailability(periods) {
       locationQuery: locationInput.value.trim(),
       forecastDay: "today",
       policy: policySelect.value,
-      workload: "moderate",
+      workload: getWorkloadValue(),
       sun: sunSelect.value,
     });
   }
